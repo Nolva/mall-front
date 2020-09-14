@@ -7,6 +7,8 @@
       show-checkbox
       node-key="catId"
       :default-expanded-keys="expandedKey"
+      draggable
+      :allow-drop="allowDrop"
     >
       <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
@@ -16,19 +18,28 @@
             type="text"
             size="mini"
             @click="() => append(data)"
-          >Append</el-button>
-          <el-button type="text" size="mini" @click="edit(data)">Edit</el-button>
+            >Append</el-button
+          >
+          <el-button type="text" size="mini" @click="edit(data)"
+            >Edit</el-button
+          >
           <el-button
             v-if="node.childNodes.length == 0"
             type="text"
             size="mini"
             @click="() => removeCategory(node, data)"
-          >Delete</el-button>
+            >Delete</el-button
+          >
         </span>
       </span>
     </el-tree>
 
-    <el-dialog :title="title" :visible.sync="dialogVisible" width="30%" :close-on-click-modal="false">
+    <el-dialog
+      :title="title"
+      :visible.sync="dialogVisible"
+      width="30%"
+      :close-on-click-modal="false"
+    >
       <el-form :model="category">
         <el-form-item label="分类名称">
           <el-input v-model="category.name" autocomplete="off"></el-input>
@@ -37,7 +48,10 @@
           <el-input v-model="category.icon" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="计量单位">
-          <el-input v-model="category.productUnit" autocomplete="off"></el-input>
+          <el-input
+            v-model="category.productUnit"
+            autocomplete="off"
+          ></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -58,6 +72,7 @@ export default {
   props: {},
   data() {
     return {
+      maxLevel: 0,
       title: "",
       dialogType: "", // edit, add
       category: {
@@ -85,12 +100,43 @@ export default {
   watch: {},
   //方法集合
   methods: {
+    allowDrop(draggingNode, dropNode, type) {
+      // 1.被拖动的当前节点以及所在的父节点，总层数不能大于3
+
+      // 1.1被拖动的当前节点总层数
+      console.log("allowDrop: ", draggingNode, dropNode, type);
+      countNodeLevel(draggingNode.data);
+      // 当前正在拖动的节点 + 父节点所在的节点深度不大于3即可
+      // 
+      let deep = (this.maxLevel - draggingNode.data.catLevel) + 1;
+      console.log('length: ', deep);
+
+      if(type == "inner") {
+        return (deep + dropNode.level) <= 3;
+      } else {
+        return (deep + dropNode.parent.level) <= 3;
+      }
+    },
+    countNodeLevel(node) {
+      // 找到所有子节点，求出最大深度
+      if(node.children != null && node.children.length > 0) {
+        for(let i=0; i < node.children.length; i++) {
+
+          // 若当前节点的子节点大于maxLevel
+          if(node.children[i].catLevel > this.maxLevel) {
+            // maxLevel更新
+            this.maxLevel = node.children[i].catLevel;
+          }
+          // 深层遍历
+          this.countNodeLevel(node.children[i]);
+        }
+      }
+    },
     edit(data) {
       console.log("edit data...", data);
       this.dialogType = "edit";
       this.title = "修改分类";
       this.dialogVisible = true;
-
       // 发送请求获取当前节点最新的数据
       this.$http({
         url: this.$http.adornUrl(`/product/category/info/${data.catId}`),
@@ -129,22 +175,22 @@ export default {
     },
     // 修改三级分类
     editCategory() {
-      var {catId, name, icon, productUnit} = this.category;
+      var { catId, name, icon, productUnit } = this.category;
       this.$http({
         url: this.$http.adornUrl("/product/category/update"),
         method: "post",
-        data: this.$http.adornData({catId, name, icon, productUnit}, false),
+        data: this.$http.adornData({ catId, name, icon, productUnit }, false),
       }).then(({ data }) => {
         this.$message({
-            type: "success",
-            message: "修改菜单成功!",
-          });
-          // 关闭对话框
-          this.dialogVisible = false;
-          // 刷新页面，显示新菜单
-          this.getMenus();
-          // 设置需要默认展开的菜单
-          this.expandedKey = [this.category.parentCid];
+          type: "success",
+          message: "修改菜单成功!",
+        });
+        // 关闭对话框
+        this.dialogVisible = false;
+        // 刷新页面，显示新菜单
+        this.getMenus();
+        // 设置需要默认展开的菜单
+        this.expandedKey = [this.category.parentCid];
       });
     },
     // 添加三级菜单
