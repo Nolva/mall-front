@@ -9,6 +9,7 @@
       :default-expanded-keys="expandedKey"
       draggable
       :allow-drop="allowDrop"
+      @node-drop="handleDrop"
     >
       <span class="custom-tree-node" slot-scope="{ node, data }">
         <span>{{ node.label }}</span>
@@ -18,18 +19,14 @@
             type="text"
             size="mini"
             @click="() => append(data)"
-            >Append</el-button
-          >
-          <el-button type="text" size="mini" @click="edit(data)"
-            >Edit</el-button
-          >
+          >Append</el-button>
+          <el-button type="text" size="mini" @click="edit(data)">Edit</el-button>
           <el-button
             v-if="node.childNodes.length == 0"
             type="text"
             size="mini"
             @click="() => removeCategory(node, data)"
-            >Delete</el-button
-          >
+          >Delete</el-button>
         </span>
       </span>
     </el-tree>
@@ -48,10 +45,7 @@
           <el-input v-model="category.icon" autocomplete="off"></el-input>
         </el-form-item>
         <el-form-item label="计量单位">
-          <el-input
-            v-model="category.productUnit"
-            autocomplete="off"
-          ></el-input>
+          <el-input v-model="category.productUnit" autocomplete="off"></el-input>
         </el-form-item>
       </el-form>
       <span slot="footer" class="dialog-footer">
@@ -100,6 +94,12 @@ export default {
   watch: {},
   //方法集合
   methods: {
+    handleDrop(draggingNode, dropNode, dropType, ev) {
+        console.log('tree drop: ', draggingNode, dropNode, dropType);
+        // 1.当前节点最新的父节点id
+
+        // 2.当前拖拽节点的最新顺序
+      },
     allowDrop(draggingNode, dropNode, type) {
       // 1.被拖动的当前节点以及所在的父节点，总层数不能大于3
 
